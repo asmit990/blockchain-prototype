@@ -130,12 +130,15 @@ func main() {
 	blockChain := NewBlockChain()
 	blockChain.Print()
 
-	// Creating proper SHA-256 hash instead of string
-	hash1 := sha256.Sum256([]byte("hash 1"))
-	blockChain.CreateBlock(5, hash1)
+	blockChain.AddTransaction("A", "B", 1.0)
+	previousHash := blockChain.LastBlock().Hash()
+	blockChain.CreateBlock(5, previousHash)
 	blockChain.Print()
+   
+	blockChain.AddTransaction("c", "d", 3.0)
+	blockChain.AddTransaction("x", "n", 2.0)
 
-	hash2 := sha256.Sum256([]byte("hash 2"))
-	blockChain.CreateBlock(5, hash2)
-	blockChain.Print()
+previousHash = blockChain.LastBlock().Hash()
+blockChain.CreateBlock(2, previousHash)
+blockChain.Print()
 }
