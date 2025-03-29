@@ -1,6 +1,8 @@
 package block
 
 import (
+	"blockchain/utils"
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -95,10 +97,34 @@ func (bc *Blockchain) Print() {
 	fmt.Printf("%s\n", strings.Repeat("=", 25))
 }
 
-func (bc *Blockchain) AddTransaction(sender string, recipient string, value float32) {
-	t := NewTransaction(sender, recipient, value)
+func (bc *Blockchain) AddTransaction(sender string, recipient string, value float32,
+	senderPublicKey *ecdsa.PublicKey, s *utils.Signature, t *Transaction) bool {
+
+	t = NewTransaction(sender, recipient, value) // Existing t use kar rahe hain, naye t declare nahi kar rahe
+   if sender == MINING_SENDER {
 	bc.transactionPool = append(bc.transactionPool, t)
+	return true
+   }
+	if bc.VerifyTransactionSignature(senderPublicKey, s, t) {
+		bc.transactionPool = append(bc.transactionPool, t) // Transaction add kar rahe hain
+		return true
+	} else {
+		log.Println("ERROR: verify transaction")
+		return false // Yahan return kar diya, taaki function exit ho jaye
+	}
+
+
 }
+
+
+
+func (bc *Blockchain) VerifyTransactionSignature(
+	senderPublicKey *ecdsa.PublicKey, s *utils.Signature, t *Transaction) bool {
+	m, _ := json.Marshal(t)             // Serialize transaction
+	h := sha256.Sum256([]byte(m))               // Correct usage of sha256
+	return ecdsa.Verify(senderPublicKey, h[:], s.R, s.S) // Verify signature
+}
+
 func (bc *Blockchain) CopyTransactionPool() []*Transaction {
 	transactions := make([]*Transaction, 0)
 	for _ , t := range bc.transactionPool {
@@ -126,7 +152,7 @@ func (bc *Blockchain) ProofOfWork() int {
    return nonce
 }
 func (bc *Blockchain) Mining() bool {
-	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD)
+	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD,nil ,nil)
 	nonce := bc.ProofOfWork()
 	previousHash := bc.LastBlock().Hash()
 	bc.CreateBlock(nonce, previousHash)
