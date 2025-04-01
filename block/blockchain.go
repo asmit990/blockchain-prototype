@@ -65,16 +65,33 @@ type Blockchain struct {
 	transactionPool    []*Transaction
 	chain              []*Block
 	blockchainAddress    string
+	port uint16
 }
 
-func NewBlockChain(	blockchainAddress  string) *Blockchain {
-	b := &Block{}
-	bc := new(Blockchain)
-	bc.blockchainAddress = blockchainAddress
-	bc.CreateBlock(0, b.Hash()) 
-	return bc
+func NewBlockchain(blockchainAddress string, port uint16) *Blockchain {
+    b := &Block{}
+    bc := new(Blockchain)
+    
+    
+    bc.blockchainAddress = blockchainAddress
+    bc.port = port
+    
+
+    bc.CreateBlock(0, b.Hash()) 
+    
+    return bc
 }
 
+
+func (bc *Blockchain) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Blocks []*Block `json: "chains"`
+	}{
+		Blocks: bc.chain,
+	},
+
+)
+}
 func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
 	b := NewBlock(nonce, previousHash, bc.transactionPool)
 	bc.chain = append(bc.chain, b)
@@ -106,6 +123,9 @@ func (bc *Blockchain) AddTransaction(sender string, recipient string, value floa
 	return true
    }
 	if bc.VerifyTransactionSignature(senderPublicKey, s, t) {
+		if bc.CalculateTotalAmount(sender) < value{
+			log.Println("Error : not enough balance in a wallet")
+		}
 		bc.transactionPool = append(bc.transactionPool, t) // Transaction add kar rahe hain
 		return true
 	} else {
@@ -117,7 +137,7 @@ func (bc *Blockchain) AddTransaction(sender string, recipient string, value floa
 }
 
 
-
+ 
 func (bc *Blockchain) VerifyTransactionSignature(
 	senderPublicKey *ecdsa.PublicKey, s *utils.Signature, t *Transaction) bool {
 	m, _ := json.Marshal(t)             // Serialize transaction
@@ -152,13 +172,15 @@ func (bc *Blockchain) ProofOfWork() int {
    return nonce
 }
 func (bc *Blockchain) Mining() bool {
-	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD,nil ,nil)
+	bc.AddTransaction(MINING_SENDER, bc.blockchainAddress, MINING_REWARD, nil, nil, nil)
+
 	nonce := bc.ProofOfWork()
 	previousHash := bc.LastBlock().Hash()
 	bc.CreateBlock(nonce, previousHash)
 	log.Println("action=mining, status=success")
-return true
+	return true
 }
+
 func (bc *Blockchain) CalculateTotalAmount(blockchainAddress string) float32 {
 	var totalAmount float32 = 0.0
 	for _, b := range bc.chain {
