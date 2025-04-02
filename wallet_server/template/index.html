@@ -3,9 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>asmit_wallet</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.5/elliptic.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function signTransaction(privateKey, sender, recipient, amount) {
+                let EC = elliptic.ec;
+                let ec = new EC('secp256k1'); 
+                let key = ec.keyFromPrivate(privateKey, 'hex');
+                let message = sender + recipient + amount;
+                let signature = key.sign(message).toDER('hex');
+                return signature;
+            }
+
+            function reload_amount() {
+                let blockchainAddress = $('#blockchain_address').val();
+                if (!blockchainAddress) {
+                    alert("Please enter a blockchain address.");
+                    return;
+                }
+                
+                $.ajax({
+                    url: `/wallet/amount?blockchain_address=${blockchainAddress}`,
+                    type: 'GET',
+                    success: function(response) {
+                        $('#wallet_amount').text(response.amount);
+                        console.info(response.amount);
+                    },
+                    error: function(error) {
+                        console.error(error);
+                    }
+                });
+            }
+
+            $('#send_money_button').click(function() {
+                let senderBlockchainAddress = $('#blockchain_address').val();
+                let recipientBlockchainAddress = $('#recipient_blockchain_address').val();
+                let senderPublicKey = $('#public_key').val();
+                let senderPrivateKey = $('#private_key').val();
+                let amount = $('#send_amount').val();
+
+                if (!senderBlockchainAddress || !recipientBlockchainAddress || !senderPublicKey || !senderPrivateKey || !amount) {
+                    alert('Please fill in all fields before sending.');
+                    return;
+                }
+
+                let signature = signTransaction(senderPrivateKey, senderBlockchainAddress, recipientBlockchainAddress, amount);
+
+                let transactionData = {
+                    sender_blockchain_address: senderBlockchainAddress,
+                    recipient_blockchain_address: recipientBlockchainAddress,
+                    sender_public_key: senderPublicKey,
+                    value: amount,
+                    signature: signature
+                };
+
+                $.ajax({
+                    url: '/send_transaction',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(transactionData),
+                    success: function(response) {
+                        if (response.message === 'fail') {
+                            alert("Transaction Failed!");
+                            return;
+                        }
+                        alert(`Transaction Sent!\nTo: ${recipientBlockchainAddress}\nAmount: ${amount}`);
+                        console.log(response);
+                    },
+                    error: function(error) {
+                        alert("An error occurred while sending the transaction.");
+                        console.error(error);
+                    }
+                });
+                $('#reload_wallet').click(function(){
+                    reload_amount();
+                })
+            });
+              setInterval(reload_amount, 100000)
+            });
+    
+    </script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #333;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.5;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            color: #444;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 8px;
+            margin: 4px 0 12px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        button:hover {
+            background-color: #f1f1f1;
+        }
+        #wallet_amount {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
+    <div class="section">
+        <h1>Wallet</h1>
+        <div id="wallet_amount">0</div>
+        <button id="reload_wallet">Reload Wallet</button>
+        
+        <label for="public_key">Public Key</label>
+        <textarea id="public_key" rows="2"></textarea>
+        
+        <label for="private_key">Private Key</label>
+        <textarea id="private_key" rows="1"></textarea>
+        
+        <label for="blockchain_address">Blockchain Address</label>
+        <textarea id="blockchain_address" rows="1"></textarea>
+    </div>
     
+    <div class="section">
+        <h1>Send Money</h1>
+        <label for="recipient_blockchain_address">Address</label>
+        <input id="recipient_blockchain_address" type="text">
+        
+        <label for="send_amount">Amount</label>
+        <input id="send_amount" type="text">
+        
+        <button id="send_money_button">Send</button>
+    </div>
 </body>
 </html>
