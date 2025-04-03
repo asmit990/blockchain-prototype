@@ -125,10 +125,3 @@ While this project is a great starting point, there are several enhancements tha
 - ✅ Implement proof-of-stake (PoS) as an alternative consensus mechanism
 - ✅ Improve the wallet UI for easier transaction management
 
----
-
-## 🤝 Contributing
-Feel free to fork this repo and make improvements! If you have any ideas, open an issue or submit a pull request.
-
-Happy coding! 🚀
-
