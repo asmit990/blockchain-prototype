@@ -1,4 +1,4 @@
- package main
+package main
 
 import (
 	"blockchain/block"
@@ -21,8 +21,9 @@ type BlockchainServer struct {
 }
 
 func NewBlockchainServer(port uint16) *BlockchainServer {
-	return &BlockchainServer{port}
+    return &BlockchainServer{port}
 }
+
 func( bcs *BlockchainServer)  Port() uint16 {
 	return bcs.port 
 }
@@ -228,10 +229,28 @@ func (bcs *BlockchainServer) StartMine(w http.ResponseWriter, req *http.Request)
 
 
 
+func (bcs *BlockchainServer) Consensus(w http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodPut:
+		bc := bcs.GetBlockchain()
+		replaced := bc.ResolveConflicts()
+
+		w.Header().Add("Content-Type", "application/json")
+		if replaced {
+			io.WriteString(w, string(utils.JsonStatus("success")))
+		} else {
+			io.WriteString(w, string(utils.JsonStatus("fail")))
+		}
+
+	default:
+		log.Printf("ERROR: Invalid HTTP Method")
+		w.WriteHeader(http.StatusBadRequest)
+	}
+}
 
 
 func (bcs *BlockchainServer) Run() {
-
+    bcs.GetBlockchain().Run()
 	http.HandleFunc("/",  bcs.GetChain )
 	http.HandleFunc("/transaction", bcs.Transactions)
 	http.HandleFunc("/mine", bcs.Mine)
