@@ -78,7 +78,7 @@ Make sure you have Go installed (v1.23.4+). If not, install it from [Go's offici
 
 Clone this repository:
 ```bash
-git clone https://github.com/your-repo/blockchain.git
+git clone https://github.com/asmit990/blockchain.git
 cd blockchain
 ```
 
