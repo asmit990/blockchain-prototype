@@ -2,7 +2,7 @@
 
 Welcome to this simple blockchain implementation! 🚀 This project is designed to help you understand the basics of how a blockchain works, including transactions, mining, and network consensus. Below, you'll find a breakdown of how everything fits together and how you can run it yourself.
 
----
+----
 
 ## 📂 Project Structure
 
