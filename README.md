@@ -1,10 +1,25 @@
-# Blockchain Project
+# Blockchain (Go) — Educational Implementation
 
-Welcome to this simple blockchain implementation! 🚀 This project is designed to help you understand the basics of how a blockchain works, including transactions, mining, and network consensus. Below, you'll find a breakdown of how everything fits together and how you can run it yourself.
+> Built end‑to‑end by **Asmit**. MIT‑licensed, production‑unsafe by design. Use it to learn, not to custody funds.
 
-----
+A compact, readable blockchain written in Go. It covers wallets, signed transactions, mining with proof‑of‑work, a simple HTTP API, and basic conflict resolution between peers. The focus is clarity over cleverness: short files, direct logic, plenty of comments.
 
-## 📂 Project Structure
+---
+
+## Features
+
+* **Blocks** with timestamp, transactions, previous hash, nonce (PoW)
+* **Wallets** with ECDSA keypairs and transaction signing
+* **Mempool** for pending transactions
+* **Mining** endpoint that collects txs, finds a valid nonce, mints a reward, and appends a block
+* **HTTP servers** for the blockchain and the wallet
+* **Naïve consensus** (longest‑chain wins) stubbed via neighbor discovery utilities
+
+> **Note**: This is an instructional codebase. It omits many things you’d need in the wild: chain reorgs, DoS hardening, fee markets, UTXO/Account pruning, full P2P, robust validation, etc.
+
+---
+
+## Project Structure
 
 ```
 ├── LICENSE
@@ -17,111 +32,203 @@ Welcome to this simple blockchain implementation! 🚀 This project is designed 
 ├── cmd
 │   └── main.go              # CLI interface (optional)
 ├── error.log                # Log file
-├── go.mod                   # Go module dependencies
-├── go.sum                   # Dependency checksum file
+├── go.mod                   # Go module definition
+├── go.sum                   # Dependency checksums
 ├── utils
-│   ├── ecdsa.go             # Handles cryptographic signing
-│   ├── json.go              # JSON utilities
-│   └── neighbor.go          # Handles peer-to-peer connections
+│   ├── ecdsa.go             # Cryptographic signing (ECDSA)
+│   ├── json.go              # JSON helpers
+│   └── neighbor.go          # Peer discovery / neighbor handling (naïve)
 ├── wallet
 │   └── wallet.go            # Wallet implementation
 └── wallet_server
     ├── main.go              # Wallet API server
-    ├── template             # HTML templates (if any UI is included)
+    ├── template             # Optional HTML templates
     ├── wallet_server        # Additional wallet server logic
-    └── wallet_server.go     # Handles wallet interactions
+    └── wallet_server.go     # Wallet HTTP handlers
 ```
 
 ---
 
-## ⚡ How It Works
+## How it Works (High‑Level)
 
-### 1️⃣ Blockchain Basics
-At its core, this project implements a basic **blockchain**, which is a distributed ledger that stores transactions securely. It consists of **blocks**, each containing:
-- A timestamp ⏳
-- A list of transactions 📜
-- A reference (hash) to the previous block 🔗
-- A unique identifier (nonce) to verify proof-of-work ✅
+### 1) Blockchain Basics
 
-### 2️⃣ Transactions
-Transactions are the foundation of the blockchain. A **wallet** creates transactions, signs them with a private key 🔑, and broadcasts them to the blockchain network. Transactions include:
-- Sender address 📤
-- Recipient address 📥
-- Amount 💰
+Each block holds:
 
-### 3️⃣ Mining ⛏️
-Mining is the process of validating transactions and adding them to the blockchain. The blockchain server handles mining by:
-1. Collecting pending transactions 📌
-2. Finding a valid **nonce** (proof-of-work) 🧩
-3. Creating a new block and adding it to the chain 🔄
-4. Rewarding the miner with cryptocurrency 🏆
+* **Timestamp**
+* **Transactions** (array)
+* **PrevHash** (link to previous block)
+* **Nonce** (proof‑of‑work)
+* **Hash** (block header hash)
 
-### 4️⃣ Wallets 🔐
-Each user has a **wallet** that generates a public/private key pair for secure transactions. The wallet server handles:
-- Creating a new wallet 🆕
-- Signing transactions ✍️
-- Sending transactions to the blockchain 📡
+### 2) Transactions
 
-### 5️⃣ Blockchain Server 🌍
-The **blockchain server** is the core of the network. It:
-- Maintains the blockchain ledger 📖
-- Processes transactions and blocks 🏗️
-- Supports API endpoints to interact with the blockchain 🔌
-- Ensures network consensus by resolving conflicts ⚖️
+Wallets create transactions and sign them with the sender’s private key. A transaction contains:
+
+* **From** (public address)
+* **To** (recipient address)
+* **Amount**
+* **Signature** (ECDSA over the payload)
+
+### 3) Mining (Proof‑of‑Work)
+
+* Collect transactions from the mempool
+* Build a candidate block
+* Increment nonce until `hash(header) < target`
+* On success: append block, clear included txs, credit miner reward
+
+### 4) Wallets
+
+* Generate ECDSA keypair (private/public)
+* Derive a public address
+* Sign transactions locally and submit to the node
+
+### 5) Server & Consensus
+
+* **Blockchain Server** exposes REST endpoints to query chain, submit transactions, and mine
+* **Consensus**: longest‑chain wins (placeholder). `utils/neighbor.go` contains simple neighbor mechanics you can extend to real P2P gossip/sync
 
 ---
 
-## 🚀 Running the Project
+## Requirements
 
-### Step 1: Install Dependencies
-Make sure you have Go installed (v1.23.4+). If not, install it from [Go's official site](https://go.dev/).
+* **Go 1.23.4+** (or newer)
+* A POSIX‑like shell (macOS/Linux) or PowerShell on Windows
 
-Clone this repository:
+---
+
+## Setup
+
 ```bash
+# Clone
 git clone https://github.com/asmit990/blockchain.git
 cd blockchain
-```
 
-Initialize the Go module:
-```bash
-rm go.mod go.sum # Remove old module files if needed
+# Reset/initialize module files (optional)
+rm -f go.mod go.sum
+
 go mod init blockchain
-go mod tidy # Install dependencies
+go mod tidy
 ```
 
-### Step 2: Start the Blockchain Server
+> If you already have a `go.mod`, you can skip the removal. `go mod tidy` will pull exact dependencies.
+
+---
+
+## Run
+
+### 1) Start the Blockchain Server
+
 ```bash
 go run blockchain_server/main.go
 ```
-This starts the blockchain server on the default port (6000).
 
-### Step 3: Start the Wallet Server (Optional)
+Default port: **6000**.
+
+### 2) Start the Wallet Server (optional)
+
 ```bash
 go run wallet_server/main.go
 ```
-This allows wallets to create and send transactions.
 
-### Step 4: Interact with the Blockchain
-You can use HTTP requests to interact with the blockchain. Some example endpoints:
-
-- **Get the blockchain:**
-  ```bash
-  curl http://localhost:6000/
-  ```
-- **Mine a block:**
-  ```bash
-  curl http://localhost:6000/mine
-  ```
-- **View pending transactions:**
-  ```bash
-  curl http://localhost:6000/transactions
-  ```
+Default port: **7000** (or as defined in the code).
 
 ---
 
-## 🛠️ Future Improvements
-While this project is a great starting point, there are several enhancements that can be made:
-- ✅ Add peer-to-peer networking for a fully decentralized blockchain
-- ✅ Implement proof-of-stake (PoS) as an alternative consensus mechanism
-- ✅ Improve the wallet UI for easier transaction management
+## API Quickstart (HTTP)
+
+Use `curl` or your favorite REST client.
+
+**Get the blockchain**
+
+```bash
+curl http://localhost:6000/
+```
+
+**Mine a block**
+
+```bash
+curl http://localhost:6000/mine
+```
+
+**View pending transactions**
+
+```bash
+curl http://localhost:6000/transactions
+```
+
+**Submit a transaction** *(via wallet server submitting to blockchain)*
+
+```bash
+# Example body may differ based on your wallet_server handlers
+curl -X POST http://localhost:7000/transaction \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "from":   "<sender-address>",
+        "to":     "<recipient-address>",
+        "amount": 10
+      }'
+```
+
+---
+
+## Configuration
+
+* **Ports**: See `main.go` files in `blockchain_server/` and `wallet_server/`
+* **Mining reward / difficulty**: Defined in `block/blockchain.go` (search for constants). Tune for faster local testing.
+* **Logging**: Output to `error.log` where applicable.
+
+---
+
+## Notes on Security & Limitations
+
+* ECDSA keys are not stored securely. Use a proper keystore for anything serious.
+* No persistent database: the chain lives in memory unless you add storage.
+* Consensus is naïve. There is no Sybil resistance, no finality, no network partition handling.
+* No fee market or mempool policy (RBF, min‑fee, eviction). Transactions are accepted on sight.
+* Mining is intentionally easy; difficulty targets are for demos.
+
+This is a learning scaffold. Treat it that way.
+
+---
+
+## Roadmap / Future Work
+
+* [ ] Real P2P networking (gossip, inventory, block/tx relay)
+* [ ] Robust chain sync & reorg handling
+* [ ] Proof‑of‑Stake (PoS) experimental path
+* [ ] Wallet UI (basic React) and mnemonic/keystore support
+* [ ] Persistent storage (BoltDB/Badger/SQLite)
+* [ ] Fee market + mempool rules
+* [ ] Unit tests & property tests
+
+---
+
+## Development
+
+```bash
+# Lint/format
+go fmt ./...
+
+# Build binaries (optional)
+go build -o bin/blockchain ./blockchain_server
+go build -o bin/wallet     ./wallet_server
+
+# Run tests (add as you go)
+go test ./...
+```
+
+Coding style: keep functions small, favor clarity over abstraction, document invariants near the code that enforces them.
+
+---
+
+## License
+
+MIT. See `LICENSE`.
+
+---
+
+## Attribution
+
+Made entirely by **Asmit**. If you fork or extend, please keep author credit in the README and commit history.
 
