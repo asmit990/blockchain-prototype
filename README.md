@@ -1,5 +1,7 @@
 # Blockchain (Go) — Educational Implementation
 
+Made entirely by **Asmit**. If you fork or extend, please keep author credit in the README and commit history.
+
 > Built end‑to‑end by **Asmit**. MIT‑licensed, production‑unsafe by design. Use it to learn, not to custody funds.
 
 A compact, readable blockchain written in Go. It covers wallets, signed transactions, mining with proof‑of‑work, a simple HTTP API, and basic conflict resolution between peers. The focus is clarity over cleverness: short files, direct logic, plenty of comments.
@@ -230,5 +232,5 @@ MIT. See `LICENSE`.
 
 ## Attribution
 
-Made entirely by **Asmit**. If you fork or extend, please keep author credit in the README and commit history.
+
 
